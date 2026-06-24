@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.2",
+    "pg": "^8.22.0",
+    "serverless-offline": "^14.7.4",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "serverless": "^3.40.0"
+  }
+}
