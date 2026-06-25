@@ -36,8 +36,36 @@ functions:
     handler: products/addNewproduct.handler
     events:
      - httpApi:
-         path: /users/create
+         path: /addNewproduct
          method: post
+
+  getAllproduct:
+    handler: products/getAllproduct.handler
+    events:
+     - httpApi:
+         path: /getAllproduct
+         method: get
+
+  updateProduct:
+    handler: products/updateProduct.handler
+    events:
+     - httpApi:
+         path: /updateProduct/{id}
+         method: put
+
+  getProductview:
+    handler: products/getProductview.handler
+    events:
+     - httpApi:
+         path: /getProductview
+         method: get
+
+  toggleStock:
+    handler: products/toggleStock.handler
+    events:
+     - httpApi:
+         path: /toggleStock
+         method: put
 
 #      - websocket: $connect
 #      - s3: ${env:BUCKET}

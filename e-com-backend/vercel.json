@@ -1,14 +1,67 @@
 {
   "version": 2,
+  "builds": [
+    { "src": "users/create.js", "use": "@vercel/node" },
+    { "src": "products/addNewproduct.js", "use": "@vercel/node" },
+    { "src": "products/getAllproduct.js", "use": "@vercel/node" },
+    { "src": "products/updateProduct.js", "use": "@vercel/node" },
+    { "src": "products/getProductview.js", "use": "@vercel/node" },
+    { "src": "products/toggleStock.js", "use": "@vercel/node" }
+  ],
   "routes": [
     {
-      "src": "/api/(.*)",
+      "src": "/users/create",
+      "dest": "users/create.js",
       "headers": {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization"
-      },
-      "dest": "/api/$1"
+      }
+    },
+    {
+      "src": "/products/addNewproduct",
+      "dest": "products/addNewproduct.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    },
+    {
+      "src": "/products/getAllproduct",
+      "dest": "products/getAllproduct.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    },
+    {
+      "src": "/products/updateProduct",
+      "dest": "products/updateProduct.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    },
+    {
+      "src": "/products/getProductview",
+      "dest": "products/getProductview.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    },
+    {
+      "src": "/products/toggleStock",
+      "dest": "products/toggleStock.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
     }
   ]
 }
