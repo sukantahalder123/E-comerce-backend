@@ -1,109 +1,149 @@
 const { connectToDatabase } = require("../db/dbConnection");
 const { z } = require("zod");
+const verifyAdmin = require("../middleware/admin");
+
+const ProductSchema = z.object({
+  product_name: z.string().trim().min(2, "Product name is required"),
+  brand: z.string().trim().optional().default(""),
+  category: z.string().trim().min(1, "Category is required"),
+  unit_type: z
+    .enum(["kg", "piece", "gram", "dozen", "ml"])
+    .default("piece"),
+  price: z.coerce.number().positive("Price must be greater than 0"),
+  stock_quantity: z.coerce.number().min(0).default(0),
+  image_url: z.string().url().optional().or(z.literal("")),
+  description: z.string().optional().default(""),
+});
 
 export default async function handler(req, res) {
-    const headers = {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    };
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
 
-    // CORS
-    if (req.method === "OPTIONS") {
-        return res.status(200).end();
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      success: false,
+      message: "Method Not Allowed",
+    });
+  }
+
+  let client;
+  let admin;
+
+  try {
+    // Verify Admin Login
+    admin = await verifyAdmin(req);
+
+    // Validate Request
+    const validation = ProductSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        errors: validation.error.flatten().fieldErrors,
+      });
     }
-    if (req.method !== "POST") {
-        return res.status(405).json({
-            error: `Method ${req.method} Not Allowed`,
-        });
+
+    const product = validation.data;
+
+    client = await connectToDatabase();
+
+    // Check Duplicate Product
+    const duplicate = await client.query(
+      `
+      SELECT id
+      FROM products
+      WHERE LOWER(product_name)=LOWER($1)
+      LIMIT 1
+      `,
+      [product.product_name]
+    );
+
+    if (duplicate.rowCount > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "Product already exists",
+      });
     }
-    let client;
 
-    try {
-        // use req.body directly (Vercel auto-parses JSON)
-        const {
-            product_name,
-            unit_type,
-            price,
-            stock_quantity,
-            image_url,
-            brand,
-            category,
-            Description,
-        } = req.body;
-
-        const newProduct = {
-            product_name,
-            unit_type: unit_type || "kg",
-            price: Number(price),
-            stock_quantity: Number(stock_quantity || 0),
-            image_url: image_url || null,
-            brand,
-            category,
-            Description: Description || "",
-        };
-
-        // VALIDATION
-        const ProductSchema = z.object({
-            product_name: z.string().min(1),
-            brand: z.string().min(1),
-            category: z.string().min(1),
-            unit_type: z.enum(["kg", "piece", "gram"]).default("kg"),
-            price: z.number().positive(),
-            stock_quantity: z.number().nonnegative(),
-            image_url: z.string().nullable().optional(),
-            Description: z.string().optional(),
-        });
-        const validation = ProductSchema.safeParse(newProduct);
-        if (!validation.success) {
-            return res.status(400).json({
-                error: validation.error.formErrors.fieldErrors,
-            });
-        }
-        // DB CONNECT
-        client = await connectToDatabase();
-        // DUPLICATE CHECK
-        const duplicate = await client.query(
-            `SELECT COUNT(*) FROM public.products WHERE LOWER(product_name)=LOWER($1)`,
-            [newProduct.product_name]
-        );
-        if (parseInt(duplicate.rows[0].count) > 0) {
-            return res.status(400).json({
-                message: "Product already exists",
-            });
-        }
-        // STOCK FLAG
-        const isStockOut = newProduct.stock_quantity <= 0;
-        // INSERT
         const query = `
-            INSERT INTO public.products
-            (product_name, unit_type, price, stock_quantity, image_url, is_stock_out, brand, category, Description)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-            RETURNING *;
-        `;
-        const values = [
-            newProduct.product_name,
-            newProduct.unit_type,
-            newProduct.price,
-            newProduct.stock_quantity,
-            newProduct.image_url,
-            isStockOut,
-            newProduct.brand,
-            newProduct.category,
-            newProduct.Description,
-        ];
-        const result = await client.query(query, values);
-        return res.status(200).json({
-            message: "Product created successfully",
-            product: result.rows[0],
-        });
+      INSERT INTO products
+      (
+        product_name,
+        unit_type,
+        price,
+        stock_quantity,
+        image_url,
+        brand,
+        category,
+        description
+      )
+      VALUES
+      (
+        $1,$2,$3,$4,$5,$6,$7,$8
+      )
+      RETURNING *;
+    `;
 
-    } catch (error) {
-        return res.status(500).json({
-            message: "Internal Server Error",
-            error: error.message,
-        });
-    } finally {
-        if (client) await client.end?.();
+    const values = [
+      product.product_name,
+      product.unit_type,
+      product.price,
+      product.stock_quantity,
+      product.image_url || null,
+      product.brand,
+      product.category,
+      product.description,
+    ];
+
+    const result = await client.query(query, values);
+
+    return res.status(201).json({
+      success: true,
+      message: "Product created successfully",
+      data: result.rows[0],
+    });
+
+  } catch (err) {
+
+    if (
+      err.message === "Access denied" ||
+      err.message === "User not found" ||
+      err.message === "Account not verified" ||
+      err.message === "Authorization header missing" ||
+      err.message === "Invalid authorization format" ||
+      err.message === "Invalid or expired token"
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: err.message,
+      });
     }
+
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message,
+    });
+
+  } finally {
+
+    if (client) {
+      if (typeof client.release === "function") {
+        client.release();
+      } else if (typeof client.end === "function") {
+        await client.end();
+      }
+    }
+
+  }
 }

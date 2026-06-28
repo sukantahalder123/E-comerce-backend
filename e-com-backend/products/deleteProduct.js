@@ -1,22 +1,10 @@
 const { connectToDatabase } = require("../db/dbConnection");
-const { z } = require("zod");
 const verifyAdmin = require("../middleware/admin");
-
-const ProductSchema = z.object({
-  product_name: z.string().trim().min(2, "Product name is required"),
-  brand: z.string().trim().optional().default(""),
-  category: z.string().trim().min(1, "Category is required"),
-  unit_type: z.enum(["kg", "piece", "gram", "dozen", "ml"]),
-  price: z.coerce.number().positive("Price must be greater than 0"),
-  stock_quantity: z.coerce.number().min(0),
-  image_url: z.string().url().optional().or(z.literal("")),
-  description: z.string().optional().default(""),
-});
 
 export default async function handler(req, res) {
   // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "PUT, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "DELETE, OPTIONS");
   res.setHeader(
     "Access-Control-Allow-Headers",
     "Content-Type, Authorization"
@@ -26,7 +14,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  if (req.method !== "PUT") {
+  if (req.method !== "DELETE") {
     return res.status(405).json({
       success: false,
       message: `Method ${req.method} Not Allowed`,
@@ -38,7 +26,7 @@ export default async function handler(req, res) {
 
   try {
 
-    // Only Admin Can Update Product
+    // Verify Admin
     admin = await verifyAdmin(req);
 
     const { id } = req.query;
@@ -50,66 +38,37 @@ export default async function handler(req, res) {
       });
     }
 
-    const validation = ProductSchema.safeParse(req.body);
-
-    if (!validation.success) {
-      return res.status(400).json({
-        success: false,
-        errors: validation.error.flatten().fieldErrors,
-      });
-    }
-
-    const {
-      product_name,
-      brand,
-      category,
-      unit_type,
-      price,
-      stock_quantity,
-      image_url,
-      description,
-    } = validation.data;
-
     client = await connectToDatabase();
-        const query = `
-      UPDATE public.products
-      SET
-        product_name = $1,
-        brand = $2,
-        category = $3,
-        unit_type = $4,
-        price = $5,
-        stock_quantity = $6,
-        image_url = $7,
-        description = $8
-      WHERE id = $9
-      RETURNING *;
-    `;
 
-    const values = [
-      product_name,
-      brand,
-      category,
-      unit_type,
-      price,
-      stock_quantity,
-      image_url || "",
-      description || "",
-      id,
-    ];
+    // Check Product Exists
+    const check = await client.query(
+      `
+      SELECT *
+      FROM products
+      WHERE id = $1
+      `,
+      [id]
+    );
 
-    const result = await client.query(query, values);
-
-    if (result.rows.length === 0) {
+    if (check.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Product not found",
       });
     }
+    // Delete Product
+    const result = await client.query(
+      `
+      DELETE FROM products
+      WHERE id = $1
+      RETURNING *;
+      `,
+      [id]
+    );
 
     return res.status(200).json({
       success: true,
-      message: "Product updated successfully",
+      message: "Product deleted successfully",
       product: result.rows[0],
     });
 
@@ -129,7 +88,7 @@ export default async function handler(req, res) {
       });
     }
 
-    console.error("Update Product Error:", err);
+    console.error("Delete Product Error:", err);
 
     return res.status(500).json({
       success: false,

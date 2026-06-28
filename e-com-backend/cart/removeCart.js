@@ -1,28 +1,27 @@
 const { connectToDatabase } = require("../db/dbConnection");
 
 export default async function handler(req, res) {
-  // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "PUT, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
-  if (req.method !== "PUT") {
+  if (req.method !== "DELETE") {
     return res.status(405).json({
       success: false,
-      message: "Only PUT method is allowed",
+      message: "Only DELETE method allowed",
     });
   }
 
-  const { id } = req.query;
+  const { cart_id } = req.query;
 
-  if (!id) {
+  if (!cart_id) {
     return res.status(400).json({
       success: false,
-      message: "Product ID is required",
+      message: "Cart ID is required",
     });
   }
 
@@ -31,46 +30,56 @@ export default async function handler(req, res) {
   try {
     client = await connectToDatabase();
 
-    const result = await client.query(
+    // Check cart item
+    const check = await client.query(
       `
-      UPDATE public.products
-      SET is_stock_out = NOT is_stock_out
+      SELECT *
+      FROM cart
       WHERE id = $1
-      RETURNING *;
       `,
-      [id]
+      [cart_id]
     );
 
-    if (result.rowCount === 0) {
+    if (check.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "Product not found",
+        message: "Cart item not found",
       });
     }
 
+    // Delete cart item
+    const result = await client.query(
+      `
+      DELETE FROM cart
+      WHERE id = $1
+      RETURNING *
+      `,
+      [cart_id]
+    );
+
     return res.status(200).json({
       success: true,
-      message: result.rows[0].is_stock_out
-        ? "Product marked as Out of Stock"
-        : "Product marked as In Stock",
-      product: result.rows[0],
+      message: "Item removed from cart",
+      cart: result.rows[0],
     });
 
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+
+    console.error(err);
 
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error.message,
+      error: err.message,
     });
 
   } finally {
+
     if (client) {
       if (typeof client.release === "function") {
         client.release();
-      } else if (typeof client.end === "function") {
-        await client.end();
+      } else {
+        await client.end?.();
       }
     }
   }

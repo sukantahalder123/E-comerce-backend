@@ -1,17 +1,23 @@
 {
   "version": 2,
   "builds": [
-    { "src": "users/create.js", "use": "@vercel/node" },
+    { "src": "upload/upload.js", "use": "@vercel/node" },
     { "src": "products/addNewproduct.js", "use": "@vercel/node" },
     { "src": "products/getAllproduct.js", "use": "@vercel/node" },
     { "src": "products/updateProduct.js", "use": "@vercel/node" },
     { "src": "products/getProductview.js", "use": "@vercel/node" },
-    { "src": "products/toggleStock.js", "use": "@vercel/node" }
+    { "src": "products/toggleStock.js", "use": "@vercel/node" },
+    { "src": "products/deleteProduct.js", "use": "@vercel/node" },
+    { "src": "cart/addCart.js", "use": "@vercel/node" },
+    { "src": "middleware/admin.js", "use": "@vercel/node" },
+    { "src": "middleware/auth.js", "use": "@vercel/node" },
+    { "src": "auth/login.js", "use": "@vercel/node" },
+    { "src": "/auth/signup.js", "use": "@vercel/node" }
   ],
   "routes": [
     {
-      "src": "/users/create",
-      "dest": "users/create.js",
+      "src": "/upload/upload",
+      "dest": "upload/upload.js",
       "headers": {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
@@ -57,6 +63,60 @@
     {
       "src": "/products/toggleStock",
       "dest": "products/toggleStock.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    },
+    {
+      "src": "/products/deleteProduct",
+      "dest": "products/deleteProduct.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    },
+    {
+      "src": "/auth/logout",
+      "dest": "auth/login.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    },
+    {
+      "src": "/middleware/admin",
+      "dest": "middleware/admin.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    },
+    {
+      "src": "/middleware/auth",
+      "dest": "middleware/auth.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    },
+    {
+      "src": "/auth/login",
+      "dest": "auth/login.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    },
+     {
+      "src": "/auth/signup",
+      "dest": "auth/signup.js",
       "headers": {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",

@@ -7,7 +7,14 @@
     "vercel-build": "echo 'Building...'"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.108.2",
+    "bcryptjs": "^3.0.3",
+    "busboy": "^1.6.0",
     "dotenv": "^17.4.2",
+    "formidable": "^3.5.4",
+    "fs": "^0.0.1-security",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.2.0",
     "pg": "^8.11.0",
     "serverless-offline": "^14.7.4",
     "zod": "^3.22.0"
