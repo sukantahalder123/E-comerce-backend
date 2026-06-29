@@ -30,11 +30,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ===========================
     // Verify Admin
-    // ===========================
     await verifyAdmin(req);
-
     const form = formidable({
       multiples: false,
       keepExtensions: true,
